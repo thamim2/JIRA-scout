@@ -1,0 +1,6 @@
+# Install these in addition to requirements.txt to use the
+# higher-quality sentence-transformer embedding backend:
+#   pip install -r requirements.txt -r requirements-optional.txt
+#   EMBEDDING_BACKEND=sentence-transformer uvicorn app.main:app --reload
+sentence-transformers==3.0.1
+torch==2.3.1

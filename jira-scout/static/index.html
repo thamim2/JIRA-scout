@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jira Scout — Smart Ticket Discovery</title>
+<style>
+  :root {
+    --ink: #e8ecf1;
+    --ink-dim: #8b95a5;
+    --bg: #10141c;
+    --bg-panel: #161b26;
+    --bg-card: #1b2230;
+    --line: #262e3d;
+    --focus: #5eead4;
+    --focus-dim: #1f4d47;
+    --amber: #f0b429;
+    --danger: #f2545b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    min-height: 100vh;
+  }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .lens {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--focus);
+    border-radius: 50%;
+    position: relative;
+    top: 1px;
+  }
+  .brand .lens::after {
+    content: "";
+    position: absolute;
+    right: -6px; bottom: -6px;
+    width: 6px; height: 2px;
+    background: var(--focus);
+    transform: rotate(45deg);
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+  .tagline { color: var(--ink-dim); font-size: 13px; }
+
+  main { max-width: 920px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--focus); }
+  input[type="text"]::placeholder { color: #56607a; }
+
+  button.run {
+    background: var(--focus);
+    color: #0a1512;
+    border: none;
+    padding: 0 22px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.run:hover { background: #7ff3de; }
+  button.run:disabled { opacity: 0.5; cursor: default; }
+
+  .hint { color: var(--ink-dim); font-size: 12px; margin-bottom: 30px; }
+  .hint button {
+    background: none; border: none; color: var(--focus);
+    cursor: pointer; font-size: 12px; padding: 0; text-decoration: underline;
+  }
+
+  .section-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin: 28px 0 12px;
+  }
+
+  .result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+  }
+  .result-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 12px; margin-bottom: 6px;
+  }
+  .result-id { color: var(--focus); font-size: 12px; }
+  .result-title { font-size: 15px; font-weight: 600; margin: 4px 0 6px; }
+  .result-desc { color: var(--ink-dim); font-size: 13.5px; line-height: 1.5; margin-bottom: 10px; }
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 10px; border: 1px solid var(--line); color: var(--ink-dim);
+    margin-right: 6px;
+  }
+  .badge.status-open { color: var(--amber); border-color: var(--amber); }
+  .badge.status-resolved { color: var(--focus); border-color: var(--focus-dim); }
+
+  .score-wrap { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+  .score-bar-bg {
+    width: 70px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden;
+  }
+  .score-bar-fill { height: 100%; background: var(--focus); }
+  .score-num { font-size: 12px; color: var(--ink-dim); }
+
+  .resolution {
+    border-top: 1px dashed var(--line);
+    margin-top: 10px; padding-top: 10px;
+    font-size: 13px; color: #b9c6da;
+  }
+  .resolution b { color: var(--focus); font-weight: 600; }
+
+  .empty { color: var(--ink-dim); font-size: 13px; padding: 24px 0; }
+  .footer-note { color: #4c5568; font-size: 11.5px; margin-top: 40px; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="lens"></span>
+      <h1>Jira Scout</h1>
+    </div>
+    <span class="tagline">Scouts for duplicate tickets before you file a new one</span>
+  </header>
+
+  <main>
+    <div class="search-row">
+      <input id="query" type="text" placeholder="Describe the problem, e.g. 'users getting server error on login'" />
+      <button class="run" id="runBtn">Search</button>
+    </div>
+    <div class="hint">
+      Try:
+      <button onclick="runExample('users cannot sign in, getting a server error')">login errors</button> ·
+      <button onclick="runExample('export is cutting off large reports')">export truncation</button> ·
+      <button onclick="runExample('app crashes when tapping a notification on android')">android crash</button>
+    </div>
+
+    <div class="section-label">Matching tickets</div>
+    <div id="results"><div class="empty">Run a search to see semantically similar tickets, ranked by cosine similarity.</div></div>
+
+    <div class="footer-note">
+      Vector representations are built by a pluggable embedding backend (TF-IDF by default,
+      swappable for a sentence-transformer model). Similarity is cosine distance over the
+      title + description of each ticket. See README for architecture details.
+    </div>
+  </main>
+
+<script>
+const resultsEl = document.getElementById('results');
+const queryEl = document.getElementById('query');
+const runBtn = document.getElementById('runBtn');
+
+function statusClass(status) {
+  return status.toLowerCase() === 'open' ? 'status-open' : 'status-resolved';
+}
+
+function renderResults(items) {
+  if (!items.length) {
+    resultsEl.innerHTML = '<div class="empty">No sufficiently similar tickets found. This looks like a new issue.</div>';
+    return;
+  }
+  resultsEl.innerHTML = items.map(t => `
+    <div class="result-card">
+      <div class="result-top">
+        <div>
+          <span class="result-id mono">${t.id}</span>
+          <div class="result-title">${escapeHtml(t.title)}</div>
+        </div>
+        <div class="score-wrap">
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.min(100, t.score*100)}%"></div></div>
+          <span class="score-num mono">${t.score.toFixed(2)}</span>
+        </div>
+      </div>
+      <div class="result-desc">${escapeHtml(t.description)}</div>
+      <span class="badge ${statusClass(t.status)}">${t.status}</span>
+      ${t.labels.map(l => `<span class="badge">${l}</span>`).join('')}
+      ${t.resolution ? `<div class="resolution"><b>Resolution:</b> ${escapeHtml(t.resolution)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function search(query) {
+  if (!query.trim()) return;
+  runBtn.disabled = true;
+  resultsEl.innerHTML = '<div class="empty">Searching…</div>';
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query, top_k: 5})
+    });
+    const data = await res.json();
+    renderResults(data);
+  } catch (e) {
+    resultsEl.innerHTML = '<div class="empty">Error reaching the search API. Is the server running?</div>';
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+function runExample(text) {
+  queryEl.value = text;
+  search(text);
+}
+
+runBtn.addEventListener('click', () => search(queryEl.value));
+queryEl.addEventListener('keydown', e => { if (e.key === 'Enter') search(queryEl.value); });
+</script>
+</body>
+</html>

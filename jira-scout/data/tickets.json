@@ -1,0 +1,137 @@
+[
+  {
+    "id": "PROJ-101",
+    "title": "Login page throws 500 error on submit",
+    "description": "When users click the Login button after entering valid credentials, the server returns a 500 Internal Server Error. This started after the auth-service deployment on Monday. Stack trace points to a null pointer in TokenValidator.",
+    "status": "Resolved",
+    "resolution": "Fixed null check in TokenValidator.validate() when refresh token cookie is missing. Deployed hotfix auth-service v2.3.1.",
+    "created": "2026-01-12",
+    "labels": ["auth", "bug", "production"]
+  },
+  {
+    "id": "PROJ-114",
+    "title": "Users unable to sign in, server error 500",
+    "description": "Multiple customers reporting they cannot log in. Getting a generic server error page. Seems to have started recently, possibly tied to a backend release.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-01-14",
+    "labels": ["auth", "production"]
+  },
+  {
+    "id": "PROJ-089",
+    "title": "Dashboard widgets fail to load on first paint",
+    "description": "On initial page load, revenue and usage widgets show a spinner indefinitely. Refreshing the page fixes it. Appears related to a race condition in the widget data fetcher.",
+    "status": "Resolved",
+    "resolution": "Added await for auth context initialization before widget data fetch calls fire. Released in v4.1.0.",
+    "created": "2025-11-02",
+    "labels": ["frontend", "dashboard", "bug"]
+  },
+  {
+    "id": "PROJ-133",
+    "title": "Widgets stuck loading on dashboard first visit",
+    "description": "New users report the main dashboard widgets never finish loading the first time they open the app after signing up. Works fine on reload.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-01-20",
+    "labels": ["frontend", "dashboard"]
+  },
+  {
+    "id": "PROJ-067",
+    "title": "CSV export truncates rows above 10,000",
+    "description": "Large report exports silently cut off at exactly 10,000 rows with no warning or error shown to the user. Backend logs show a hardcoded LIMIT clause in the export query.",
+    "status": "Resolved",
+    "resolution": "Removed hardcoded LIMIT, added pagination and streaming CSV writer for exports over 5,000 rows.",
+    "created": "2025-09-18",
+    "labels": ["export", "backend", "bug"]
+  },
+  {
+    "id": "PROJ-142",
+    "title": "Large exports missing data past row 10k",
+    "description": "Finance team exported a report with ~40k rows and only received 10k. No error was shown. Needs urgent fix before month-end close.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-01-25",
+    "labels": ["export", "backend", "urgent"]
+  },
+  {
+    "id": "PROJ-055",
+    "title": "Mobile app crashes on push notification tap",
+    "description": "Tapping a push notification when the app is backgrounded on Android 13 causes an immediate crash. Crashlytics shows a NullPointerException in NotificationRouter.",
+    "status": "Resolved",
+    "resolution": "Added null guard for deep-link payload parsing in NotificationRouter.onTap(). Verified fix on Android 12-14.",
+    "created": "2025-08-30",
+    "labels": ["mobile", "android", "crash"]
+  },
+  {
+    "id": "PROJ-150",
+    "title": "App crash when opening notification on Android",
+    "description": "Getting crash reports from Android users specifically when they tap a notification to open the app. iOS seems unaffected.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-01-28",
+    "labels": ["mobile", "android"]
+  },
+  {
+    "id": "PROJ-076",
+    "title": "API rate limiting returns wrong error code",
+    "description": "When clients exceed the rate limit, the API returns a 400 Bad Request instead of the expected 429 Too Many Requests, breaking client-side retry logic.",
+    "status": "Resolved",
+    "resolution": "Corrected error mapping in RateLimitMiddleware to return 429 with Retry-After header.",
+    "created": "2025-12-05",
+    "labels": ["api", "bug"]
+  },
+  {
+    "id": "PROJ-160",
+    "title": "Client retries failing due to unexpected 400 from rate limiter",
+    "description": "Our SDK's retry logic isn't kicking in when we get throttled — looks like the API is sending 400 instead of 429 when rate limited.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-02-01",
+    "labels": ["api"]
+  },
+  {
+    "id": "PROJ-040",
+    "title": "Memory leak in background sync service",
+    "description": "Background sync service memory usage grows steadily over 24 hours until OOM kill. Heap dump shows accumulating event listener references.",
+    "status": "Resolved",
+    "resolution": "Removed duplicate event listener registration on each sync cycle; added listener cleanup in service shutdown hook.",
+    "created": "2025-07-14",
+    "labels": ["backend", "performance", "memory"]
+  },
+  {
+    "id": "PROJ-171",
+    "title": "Sync worker OOM after running for about a day",
+    "description": "The sync worker pod keeps getting OOMKilled after running roughly 20-24 hours in production. Restarting temporarily resolves it.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-02-04",
+    "labels": ["backend", "performance"]
+  },
+  {
+    "id": "PROJ-022",
+    "title": "Search results not sorted by relevance",
+    "description": "Product search returns results in an inconsistent order rather than by relevance score, making it hard for users to find what they're looking for.",
+    "status": "Resolved",
+    "resolution": "Implemented BM25 scoring for search ranking and added relevance-based sort as default.",
+    "created": "2025-06-10",
+    "labels": ["search", "enhancement"]
+  },
+  {
+    "id": "PROJ-180",
+    "title": "Search feels random, not ranked by relevance",
+    "description": "Users complaining that search results don't seem to reflect how relevant they are to the query — top result is often not the best match.",
+    "status": "Open",
+    "resolution": "",
+    "created": "2026-02-10",
+    "labels": ["search"]
+  },
+  {
+    "id": "PROJ-033",
+    "title": "Password reset email not received",
+    "description": "Some users report never receiving the password reset email. No bounce errors visible in the mail provider dashboard.",
+    "status": "Resolved",
+    "resolution": "Found emails were being flagged as spam due to missing SPF record; updated DNS records and email template.",
+    "created": "2025-05-22",
+    "labels": ["auth", "email"]
+  }
+]
